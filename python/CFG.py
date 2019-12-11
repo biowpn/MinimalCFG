@@ -1,4 +1,7 @@
 
+import parser_Minimal
+import parser_BNF
+
 
 def match(cfgex, string):
     '''
@@ -15,106 +18,18 @@ def compile(cfgex):
     return CFLRecognizer(cfgex)
 
 
-def parse(cfgex):
+def parse(cfgex, fmt='Minimal'):
     '''
-    convert expression @cfgex to structured Context-Free Grammar.
-
-    @cfgex should satisfy the following format requirements:
-        1. rules are seperated by ';'
-        2. for each rule, nonterminal and subsitutions are seperated by ':'
-        3. nonterminals are identified by names surrounded by '{' and '}'
-        4. white spaces are taken into account
-        5. to indicate literal '{', '}', ':' or ';', add a '\' before them
-        6. to indicate literal '\', use '\\'
-    an example:
-        S:a{S}a;S:b{S}b;S:;
+    @cfgex notation for some CFG
+    @fmt format of the CFG notation. support 'Minimal', 'BNF'
     '''
-    G_out = []
 
-    nt_idx = {}
-    escaped = False
-    open_curly = False
-    stage = 0
-    nt = ""
-    subs = []
-    symbol = ""
-    for c in cfgex:
-        if c == '\\':
-            if escaped:
-                subs.append(c)
-                escaped = False
-            else:
-                if stage == 0:
-                    raise Exception(
-                        "cannot escape on the left hand side of a rule")
-                if open_curly:
-                    raise Exception(
-                        "non-terminal identifier does not contain special symbols")
-                escaped = True
-        elif c == '{':
-            if escaped:
-                subs.append(c)
-                escaped = False
-            else:
-                if open_curly:
-                    raise Exception(
-                        "previous open curly brace hasn't been closed")
-                if stage == 1:
-                    raise Exception(
-                        "already specified a non-terminal identifier")
-                symbol = ""
-                open_curly = True
-        elif c == '}':
-            if escaped:
-                subs.append(c)
-                escaped = False
-            else:
-                if open_curly:
-                    if not symbol:
-                        raise Exception(
-                            "non-terminal identifier cannot be empty")
-                    if stage == 0:
-                        stage == 1
-                    elif stage == 1:
-                        raise Exception("impossible stage 1")
-                    else:
-                        nt_idx[symbol] = nt_idx.get(symbol, len(nt_idx))
-                        subs.append(nt_idx[symbol])
-                    open_curly = False
-                else:
-                    raise Exception("missing open curly brace")
-        elif c == ':':
-            if escaped:
-                subs.append(c)
-                escaped = False
-            else:
-                if stage == 2:
-                    raise Exception("unexpected ':'")
-                nt_idx[symbol] = nt_idx.get(symbol, len(nt_idx))
-                nt = nt_idx[symbol]
-                stage = 2
-                subs = []
-        elif c == ';':
-            if escaped:
-                subs.append(c)
-                escaped = False
-            else:
-                if stage != 2:
-                    raise Exception("unexpected ';'")
-                if len(subs) == 0:
-                    subs = ['']
-                G_out.append((nt, subs))
-                stage = 0
-                symbol = ""
-        else:
-            if open_curly or stage == 0:
-                symbol += c
-            elif stage == 1:
-                raise Exception("expecting a ':'")
-            else:
-                subs.append(c)
-
-    return G_out
+    if fmt == 'Minimal':
+        return parser_Minimal.parse(cfgex)
+    elif fmt == 'BNF':
+        return parser_BNF.parse(cfgex)
+    else:
+        raise Exception(f"Unsupported CFG format: {fmt}")
 
 
 def get_max_non_terminal(G):
