@@ -49,7 +49,7 @@
 
 <declarator> ::= {<pointer>}? <direct-declarator>
 
-<pointer> ::= * {<type-qualifier>}* {<pointer>}?
+<pointer> ::= "*" {<type-qualifier>}* {<pointer>}?
 
 <type-qualifier> ::= "const"
                    | "volatile"
@@ -210,8 +210,8 @@
               | <jump-statement>
 
 <labeled-statement> ::= <identifier> ":" <statement>
-                      | case <constant-expression> ":" <statement>
-                      | default ":" <statement>
+                      | "case" <constant-expression> ":" <statement>
+                      | "default" ":" <statement>
 
 <expression-statement> ::= {<expression>}? ";"
 
