@@ -9,6 +9,7 @@ example:
     <Nucleotide> ::= 'A' | 'G' | 'C' | 'T'
 '''
 
+
 import string
 
 
@@ -19,7 +20,7 @@ class ParsingException(Exception):
         lines = fulltxt.split('\n')
         for i, line in enumerate(lines):
             if pos < len(line):
-                line_prefix = f"Line {i + 1}: "
+                line_prefix = f"line {i + 1}: "
                 self.fulldesc += line_prefix + line + '\n'
                 self.fulldesc += ' ' * (len(line_prefix) + pos) + '^' + '\n'
                 self.fulldesc += desc
@@ -57,18 +58,18 @@ def parse(cfgex):
             elif not special_char:
                 special_char = c
             else:
-                raise ParsingException(f"Unexpected {c}", cfgex, i)
+                raise ParsingException(f"unexpected {c}", cfgex, i)
             continue
         if c in ('\"', '\''):
             if special_char:
-                raise ParsingException(f"Unexpected {c}", cfgex, i)
+                raise ParsingException(f"unexpected {c}", cfgex, i)
             special_char = c
         elif c == '<':
             if not special_char:
                 word = ""
                 special_char = c
             else:
-                raise ParsingException(f"Unexpected {c}", cfgex, i)
+                raise ParsingException(f"unexpected {c}", cfgex, i)
         elif c == '>':
             if special_char == '<':
                 if not word:
@@ -82,12 +83,12 @@ def parse(cfgex):
                 word = ""
                 special_char = ""
             else:
-                raise ParsingException(f"Missing < for >", cfgex, i)
+                raise ParsingException(f"missing < for >", cfgex, i)
         elif c == ':':
             if not special_char or special_char == ':':
                 special_char += ':'
             else:
-                raise ParsingException(f"Unexpected {c}", cfgex, i)
+                raise ParsingException(f"unexpected {c}", cfgex, i)
         elif c == '=':
             if special_char == "::":
                 if lhs is None:
@@ -106,13 +107,13 @@ def parse(cfgex):
                 subs = []
                 special_char = ""
             else:
-                raise ParsingException(f"Unexpected {c}", cfgex, i)
+                raise ParsingException(f"unexpected {c}", cfgex, i)
         elif c == '|':
             if lhs is None:
                 raise ParsingException(
                     f"missing left hand side before |", cfgex, i)
             elif special_char:
-                raise ParsingException(f"Unexpected {c}", cfgex, i)
+                raise ParsingException(f"unexpected {c}", cfgex, i)
             else:
                 if len(subs) == 0:
                     raise ParsingException(
@@ -130,7 +131,7 @@ def parse(cfgex):
             nt_count += 1
         elif c == '?':
             if sub_nt is None:
-                raise ParsingException(f"Unexpected quantifier {c}", cfgex, i)
+                raise ParsingException(f"unexpected quantifier {c}", cfgex, i)
             G_out.append((nt_count, [""]))
             G_out.append((nt_count, [sub_nt]))
             nt, subs = stack.pop()
@@ -139,7 +140,7 @@ def parse(cfgex):
             sub_nt = None
         elif c == '*':
             if sub_nt is None:
-                raise ParsingException(f"Unexpected quantifier {c}", cfgex, i)
+                raise ParsingException(f"unexpected quantifier {c}", cfgex, i)
             G_out.append((nt_count, [""]))
             G_out.append((nt_count, [sub_nt, nt_count]))
             nt, subs = stack.pop()
@@ -148,7 +149,7 @@ def parse(cfgex):
             sub_nt = None
         elif c == '+':
             if sub_nt is None:
-                raise ParsingException(f"Unexpected quantifier {c}", cfgex, i)
+                raise ParsingException(f"unexpected quantifier {c}", cfgex, i)
             G_out.append((nt_count, [sub_nt]))
             G_out.append((nt_count, [sub_nt, nt_count]))
             nt, subs = stack.pop()
@@ -157,14 +158,14 @@ def parse(cfgex):
             sub_nt = None
         elif sub_nt is not None:
             raise ParsingException(
-                "Expected a quantifier following }", cfgex, i)
+                "expected a quantifier following }", cfgex, i)
         elif c in string.whitespace:
             pass
         else:
             if special_char == '<':
                 word += c
             else:
-                raise ParsingException(f"Unexpected char '{c}'", cfgex, i)
+                raise ParsingException(f"unexpected char '{c}'", cfgex, i)
 
     if lhs is not None:
         if len(subs) > 0:
@@ -177,6 +178,35 @@ def parse(cfgex):
     for nt_name, nt in nt_map.items():
         if nt in undefined_nts:
             print(
-                f"Warning: no production rule for non-terminal <{nt_name}> ({nt})")
+                f"warning: no production rule for non-terminal <{nt_name}> ({nt})")
 
     return G_out
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", type=argparse.FileType('r'),
+                        help="file containing CFG in BNF")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="print out each rule")
+    args = parser.parse_args()
+
+    string = args.file.read()
+
+    try:
+        G = parse(string)
+    except ParsingException as e:
+        print(str(e))
+        return
+
+    if args.verbose:
+        for rule in G:
+            print(rule)
+
+    print("syntax correct")
+
+
+if __name__ == "__main__":
+    main()

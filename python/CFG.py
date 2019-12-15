@@ -11,11 +11,12 @@ def match(cfgex, string):
     return recognizer.match(string)
 
 
-def compile(cfgex):
+def compile(cfgex, fmt='Minimal'):
     '''
     parse expression @cfgex and convert the resulted Context-Free Grammar it into Chomsky Normal Form.
+    @fmt format of the CFG notation. support 'Minimal', 'BNF'
     '''
-    return CFLRecognizer(cfgex)
+    return CFLRecognizer(cfgex, fmt)
 
 
 def parse(cfgex, fmt='Minimal'):
@@ -127,6 +128,7 @@ def eliminate_short_rules(G):
     '''
     G_out = []
     Ds = {}  # key: symbol; value: its short-rule closures
+    Ds[0] = closure_s(G, 0)
     for nt, subs in G:
         if len(subs) == 2:
             a, b = subs
@@ -189,8 +191,8 @@ def decide(G, x):
 
 class CFLRecognizer:
 
-    def __init__(self, cfgex):
-        self.G = parse(cfgex)
+    def __init__(self, cfgex, fmt):
+        self.G = parse(cfgex, fmt)
         self.G = to_CNF(self.G)
 
     def match(self, string):
