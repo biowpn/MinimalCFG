@@ -1,0 +1,23 @@
+
+<tag-open> ::= "<" <tag-name>  {<attr-list>}?  ">"
+<tag-empty> ::= "<"  <tag-name> {<attr-list>}?  "/>"
+<tag-close> ::= "</" <tag-name> ">"
+
+<attr-list> ::= <attr> | <attr> <attr-list>
+<attr> ::= <attr-empty> | <attr-unquoted> | <attr-single-quoted> | <attr-double-quoted>
+<attr-empty> ::= <attr-name>
+<attr-unquoted> ::= <attr-name> "=" <attr-unquoted-value>
+<attr-single-quoted> ::= <attr-name> "=" "'" <attr-single-quoted-value> "'"
+<attr-double-quoted> ::= <attr-name> "=" '"' <attr-double-quoted-value> '"'
+
+<letter> ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+<letter-or-digit> ::= <letter> | <digit>
+
+<tag-name> ::= <letter> {<letter-or-digit>}*
+
+<attr-name> ::= <letter> {<letter-or-digit>}*
+
+<attr-unquoted-value> ::= {<digit>}+
+<attr-single-quoted-value> ::= "'" {<letter-or-digit>}* "'"
+<attr-double-quoted-value> ::= '"' {<letter-or-digit>}* '"'
