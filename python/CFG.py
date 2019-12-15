@@ -1,34 +1,33 @@
 
+import lexer
 import parser_Minimal
 import parser_BNF
 
 
-def match(cfgex, string):
+def match(cfgex, string, fmt='Minimal', lexing=False):
     '''
     given a Context-Free Grammar expression @cfgex, decide whether @string can be produced by it.
+    @fmt format of the CFG notation. support 'Minimal', 'BNF'
+    @lexing (for BNF) if True, will preserve long string terminals and use lexer.
     '''
-    recognizer = compile(cfgex)
+    recognizer = compile(cfgex, fmt, lexing)
     return recognizer.match(string)
 
 
-def compile(cfgex, fmt='Minimal'):
+def compile(cfgex, fmt='Minimal', lexing=False):
     '''
     parse expression @cfgex and convert the resulted Context-Free Grammar it into Chomsky Normal Form.
     @fmt format of the CFG notation. support 'Minimal', 'BNF'
+    @lexing (for BNF) if True, will preserve long string terminals and use lexer.
     '''
-    return CFLRecognizer(cfgex, fmt)
+    return CFLRecognizer(cfgex, fmt, lexing)
 
 
-def parse(cfgex, fmt='Minimal'):
-    '''
-    @cfgex notation for some CFG
-    @fmt format of the CFG notation. support 'Minimal', 'BNF'
-    '''
-
+def parse(cfgex, fmt='Minimal', lexing=False):
     if fmt == 'Minimal':
         return parser_Minimal.parse(cfgex)
     elif fmt == 'BNF':
-        return parser_BNF.parse(cfgex)
+        return parser_BNF.parse(cfgex, lexing)
     else:
         raise Exception(f"Unsupported CFG format: {fmt}")
 
@@ -139,21 +138,82 @@ def eliminate_short_rules(G):
             for a_ in Ds[a]:
                 for b_ in Ds[b]:
                     G_out.append((nt, [a_, b_]))
+
     G_out_extra = []
     for a in Ds[0] - {0}:
         for nt, subs in G_out:
             if nt == a and len(subs) == 2:
                 G_out_extra.append((0, subs))
-    return G_out + G_out_extra
+    G_out = G_out + G_out_extra
+
+    return G_out
+
+
+def minimize_rules(G):
+    '''
+    perform the following minimization:
+        - remove production rules containing undefined non-terminals
+        - replace terminals that have a single short production rule
+    '''
+    G_all_defined = []
+    nt_s = set()
+    defined_nt_s = set()
+    for nt, subs in G:
+        defined_nt_s.add(nt)
+        for s in subs:
+            if type(s) is int:
+                nt_s.add(s)
+    undefined_nt_s = nt_s - defined_nt_s
+    for nt, subs in G:
+        if all([s not in undefined_nt_s for s in subs]):
+            G_all_defined.append((nt, subs))
+    nt_s = nt_s - undefined_nt_s
+
+    G_non_single = G_all_defined
+
+    # TODO: the following logic below may not preserve equivalent grammar
+    # while True:
+    #     G_wip = []
+    #     non_single_nt_s = set()
+    #     single_nt_s = {}
+    #     for nt, subs in G_non_single:
+    #         if len(subs) == 1:
+    #             if nt in non_single_nt_s:
+    #                 continue
+    #             elif nt in single_nt_s and subs[0] != single_nt_s[nt]:
+    #                 single_nt_s.pop(nt)
+    #                 non_single_nt_s.add(nt)
+    #             else:
+    #                 single_nt_s[nt] = subs[0]
+    #         else:
+    #             non_single_nt_s.add(nt)
+    #             if nt in single_nt_s:
+    #                 single_nt_s.pop(nt)
+    #     if 0 in single_nt_s:
+    #         single_nt_s.pop(0)
+    #     if not single_nt_s:
+    #         break
+    #     for nt, subs in G_non_single:
+    #         if nt in single_nt_s:
+    #             continue
+    #         for i, s in enumerate(subs):
+    #             if s in single_nt_s:
+    #                 subs[i] = single_nt_s[s]
+    #         G_wip.append((nt, subs))
+    #     G_non_single = G_wip
+
+    return G_non_single
 
 
 def to_CNF(G):
     '''
     convert CFG @G to Chomsky Normal Form.
     '''
+    G = minimize_rules(G)
     G = eliminate_long_rules(G)
     G = eliminate_e_rules(G)
     G = eliminate_short_rules(G)
+    G = minimize_rules(G)
     return G
 
 
@@ -191,9 +251,13 @@ def decide(G, x):
 
 class CFLRecognizer:
 
-    def __init__(self, cfgex, fmt):
-        self.G = parse(cfgex, fmt)
+    def __init__(self, cfgex, fmt, lexing):
+        self.lexing = lexing
+        self.G = parse(cfgex, fmt, lexing)
         self.G = to_CNF(self.G)
 
     def match(self, string):
+        if self.lexing:
+            string = lexer.lex(self.G, string)
+            print("post lexing:", string)
         return decide(self.G, string)

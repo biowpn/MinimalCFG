@@ -31,7 +31,7 @@ class ParsingException(Exception):
         return self.fulldesc
 
 
-def parse(cfgex):
+def parse(cfgex, long_terminals=False):
     G_out = []
 
     nt_map = {}
@@ -50,15 +50,14 @@ def parse(cfgex):
                 if not word:
                     subs.append('')
                 else:
-                    subs.extend(word)
+                    if long_terminals:
+                        subs.append(word)
+                    else:
+                        subs.extend(word)
                 word = ""
                 special_char = ""
-            elif special_char in ('\"', '\''):
-                word += c
-            elif not special_char:
-                special_char = c
             else:
-                raise ParsingException(f"unexpected {c}", cfgex, i)
+                word += c
             continue
         if c in ('\"', '\''):
             if special_char:
@@ -189,6 +188,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("file", type=argparse.FileType('r'),
                         help="file containing CFG in BNF")
+    parser.add_argument("-l", "--lexing", action="store_true",
+                        help="preserve long terminals")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print out each rule")
     args = parser.parse_args()
@@ -196,7 +197,7 @@ def main():
     string = args.file.read()
 
     try:
-        G = parse(string)
+        G = parse(string, args.lexing)
     except ParsingException as e:
         print(str(e))
         return

@@ -198,7 +198,7 @@ def test_match_simple_English():
 
 
 def test_match_CFG_expression():
-    # check whether the expression is a valid CFG expression within this project.
+    # check whether the expression is a valid Minimal-style CFG expression.
     # such CFG can even test itself!
 
     #   e   CFG expression
@@ -247,6 +247,56 @@ def test_match_CFG_expression():
     # I never finish it.
 
     # assert(G5.match(CFGex) == True)
+
+
+def test_BNF_lexing():
+    BNF = """
+        <S> ::= "" | <A> <S> <B>
+        <A> ::= "apple"
+        <B> ::= "banana"
+    """
+
+    G = CFG.compile(BNF, 'BNF', True)
+
+    assert(G.match("apple banana") == True)
+    assert(G.match("banana  apple") == False)
+    assert(G.match("apple apple   banana") == False)
+    assert(G.match(" apple apple  banana banana") == True)
+
+
+def test_match_C_programming_language():
+    with open("examples/C_syntax.BNF.txt") as F:
+        G6 = CFG.compile(F.read(), "BNF", True)
+    print("number of rules of this CFG in CNF:", len(G6.G))
+
+    # function declaration
+    assert(G6.match("int main(){return 0;}") == True)
+    assert(G6.match("int main({return 0;}") == False)
+    assert(G6.match("int main(){return 0};") == False)
+    assert(G6.match("int main(int id1, char** id2){return 0;}") == True)
+    assert(G6.match("int main(id1, id2){return 0};") == False)
+
+    # conditional statement
+    assert(
+        G6.match("int id0(int id1, int id2){return id1 > id2 ? id1 : id2;}") == True)
+    assert(G6.match(
+        "int id0(int id1, int id2){if (id1 > id2) {return id1;} else {return id2;} }") == True)
+
+    # loop
+    assert(G6.match(
+        "int id0(int id1){int id2 = 0; for(;id1 > 0;--id1) id2 += id1; return id2;}") == True)
+    assert(G6.match(
+        "int id0(int id1){int id2 = 0; while(id1 > 0) id2 += id1--; return id2;}") == True)
+
+    # struct definition
+    assert(G6.match("struct id0;") == True)
+    assert(G6.match("struct id0{int id1; double id2; char id3[4];};") == True)
+    assert(
+        G6.match("struct id0(){int id1; double id2; char id3[4];};") == False)
+
+    # pointer
+    assert(
+        G6.match("void id0(){ int id1; int* id2; id2 = &id1; *id2 = 0; }") == True)
 
 
 def main():
