@@ -1,33 +1,78 @@
 # Minimal Context-Free Grammar Engine
 
-Python implementation of a minimal CFG engine, which can build arbitrary CFL recognizer given CFG.
+Build arbitrary Context-Free Language recognizer given its grammar in [BNF](https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form).
 
 See also: [Minimal Regular Expression Engine](https://github.com/ymenghank/MinimalRegEx)
 
 ## Usage
 
-- Python
 
-    1. directly calling `match`:
-        ```
-        import CFG
+Directly calling `match`:
 
-        CFG.match(r"S:{S}{S};S:();S:;", "(())()")
-        ```
+```
+mincfg.match(r"<S>::=<S><S> <S>::='('')' <S>::=''", "(())()")
+```
 
-    2. construct a CFL recognizer first and call `match` later:
+Or, construct a CFL recognizer first and call `match` later:
 
-        ```
-        import CFG
+```
+r = mincfg.compile(r"<S>::=<S><S> <S>::='('')' <S>::=''", "(())()")
+r.match("(())()")
+```
 
-        r = CFG.compile(r"S:{S}{S};S:();S:;")
-        r.match("(())()")
-        ```
+## Command Line Usage
+
+```
+[In]  python -m mincfg .\examples\dna.bnf "ACCATCA"
+[Out] Yes
+```
+
+```
+[In]  python -m mincfg .\examples\dna.bnf "UGGUAGU"
+[Out] No
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2 - 1)"
+[Out] Yes
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2 (-) 1)"
+[Out] No
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2 - -1)"
+[Out] Yes
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2--1)"
+[Out] Yes
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2-- 1)"
+[Out] No
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2- -1)"
+[Out] Yes
+```
+
+```
+[In]  python -m mincfg .\examples\arithmetic.bnf "(2---1)"
+[Out] Yes
+```
+
 
 ## Testing
 
-- Python
-    - run [test.py](./python/test.py)
+```
+python -m mincfg.test
+```
 
 ## Credits
 

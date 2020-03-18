@@ -81,31 +81,8 @@ def test_match_simple_arithmetic_expression():
 
 def test_match_arithmetic_expression():
     # syntactically correct integer arithmetic expressions
-    g3 = mincfg.compile("""
-        <E> ::= <ws> <E> <ws> '+' <ws> <T> <ws>
-        <E> ::= <ws> <E> <ws> '-' <ws> <T> <ws>
-        <E> ::= <T>
-        <T> ::= <ws> <T> <ws> '*' <ws> <F> <ws>
-        <T> ::= <ws> <T> <ws> '/' <ws> <F> <ws>
-        <T> ::= <F>
-        <F> ::= '(' <E> ')'
-        <F> ::= <D>
-        <D> ::= '-' <D>
-        <D> ::= '0' <d>
-        <D> ::= '1' <d>
-        <D> ::= '2' <d>
-        <D> ::= '3' <d>
-        <D> ::= '4' <d>
-        <D> ::= '5' <d>
-        <D> ::= '6' <d>
-        <D> ::= '7' <d>
-        <D> ::= '8' <d>
-        <D> ::= '9' <d>
-        <d> ::= <D>
-        <d> ::= ''
-        <ws> ::= ' ' <ws>
-        <ws> ::= ''
-    """)
+    with open("examples/arithmetic.bnf") as F:
+        g3 = mincfg.compile(F.read())
 
     assert(g3.match("(1)") == True)
     assert(g3.match("1+1") == True)
