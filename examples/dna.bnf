@@ -1,0 +1,3 @@
+<DNA> ::= <DNA> <Nucleotide> | <Nucleotide>
+
+<Nucleotide> ::= 'A' | 'G' | 'C' | 'T'

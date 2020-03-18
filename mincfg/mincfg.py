@@ -1,40 +1,32 @@
 
-import lexer
-import parser_Minimal
-import parser_BNF
+from . import bnfparser
+from . import lexer
 
 
-def match(cfgex, string, fmt='Minimal', lexing=False):
+def match(cfgex, string, lexing=False):
     '''
-    given a Context-Free Grammar expression @cfgex, decide whether @string can be produced by it.
-    @fmt format of the CFG notation. support 'Minimal', 'BNF'
-    @lexing (for BNF) if True, will preserve long string terminals and use lexer.
+    given a Context-Free Grammar expression `cfgex`, decide whether `string` can be produced by it.
+    `lexing` if True, will preserve long terminals.
     '''
-    recognizer = compile(cfgex, fmt, lexing)
+    recognizer = compile(cfgex, lexing)
     return recognizer.match(string)
 
 
-def compile(cfgex, fmt='Minimal', lexing=False):
+def compile(cfgex, lexing=False):
     '''
-    parse expression @cfgex and convert the resulted Context-Free Grammar it into Chomsky Normal Form.
-    @fmt format of the CFG notation. support 'Minimal', 'BNF'
-    @lexing (for BNF) if True, will preserve long string terminals and use lexer.
+    parse expression `cfgex` and convert the resulted Context-Free Grammar it into Chomsky Normal Form.
+    `lexing` if True, will preserve long terminals.
     '''
-    return CFLRecognizer(cfgex, fmt, lexing)
+    return CFLRecognizer(cfgex, lexing)
 
 
-def parse(cfgex, fmt='Minimal', lexing=False):
-    if fmt == 'Minimal':
-        return parser_Minimal.parse(cfgex)
-    elif fmt == 'BNF':
-        return parser_BNF.parse(cfgex, lexing)
-    else:
-        raise Exception(f"Unsupported CFG format: {fmt}")
+def parse(cfgex, lexing=False):
+    return bnfparser.parse(cfgex, lexing)[0]
 
 
 def get_max_non_terminal(G):
     nt_max = 0
-    for nt, subs in G:
+    for nt, _ in G:
         if nt > nt_max:
             nt_max = nt
     return nt_max
@@ -42,9 +34,9 @@ def get_max_non_terminal(G):
 
 def eliminate_long_rules(G):
     '''
-    break down
+    break down long rule:
         A -> B1 B2 B3 B4
-    to
+    to short rules:
         A -> B1 A1
         A1 -> B2 A2
         A2 -> B3 B4
@@ -64,20 +56,36 @@ def eliminate_long_rules(G):
     return G_out
 
 
-def closure_e(G):
+def reverse_closure(G, s):
     '''
-    get the set of nonterminals that may derive ''
+    get the set of nonterminals that may derive symbol `s` via some short rules
     '''
-    E = {''}
+    nt_s = {s}
     done = False
     while not done:
         done = True
         for nt, subs in G:
-            if all([s in E for s in subs]) and nt not in E:
-                E.add(nt)
+            if len(subs) == 1 and subs[0] in nt_s and nt not in nt_s:
+                nt_s.add(nt)
                 done = False
-    E.remove('')
-    return E
+    nt_s.remove(s)
+    return nt_s
+
+
+def reverse_closure_e(G):
+    '''
+    get the set of nonterminals that may derive empty string ''
+    '''
+    nt_s = {''}
+    done = False
+    while not done:
+        done = True
+        for nt, subs in G:
+            if all([s in nt_s for s in subs]) and nt not in nt_s:
+                nt_s.add(nt)
+                done = False
+    nt_s.remove('')
+    return nt_s
 
 
 def eliminate_e_rules(G):
@@ -86,37 +94,37 @@ def eliminate_e_rules(G):
         A -> ''
     assuming long rules have been eliminated.
     '''
-    G_out = []
-    E = closure_e(G)
+    grammar = []
+    e = reverse_closure_e(G)
 
     for nt, subs in G:
         if len(subs) == 1:
             if subs[0] != '':
-                G_out.append((nt, subs))
+                grammar.append((nt, subs))
         elif len(subs) == 2:
-            if subs[0] in E and nt != subs[1]:
-                G_out.append((nt, [subs[1]]))
-            if subs[1] in E and nt != subs[0]:
-                G_out.append((nt, [subs[0]]))
-            G_out.append((nt, subs))
-    return G_out
+            if subs[0] in e and nt != subs[1]:
+                grammar.append((nt, [subs[1]]))
+            if subs[1] in e and nt != subs[0]:
+                grammar.append((nt, [subs[0]]))
+            grammar.append((nt, subs))
+    return grammar
 
 
 def closure_s(G, s):
     '''
-    get the set of symbols that may derive from @s by some short rule.
+    get the set of symbols that may be derived from non-terminal `s` by some short rule.
     '''
-    D = {s}
+    d = {s}
     if type(s) is str:
-        return D
+        return d
     done = False
     while not done:
         done = True
         for nt, subs in G:
-            if len(subs) == 1 and nt in D and subs[0] not in D:
-                D.add(subs[0])
+            if len(subs) == 1 and nt in d and subs[0] not in d:
+                d.add(subs[0])
                 done = False
-    return D
+    return d
 
 
 def eliminate_short_rules(G):
@@ -125,28 +133,28 @@ def eliminate_short_rules(G):
         A -> B
     assuming long rules and e-rules have been eliminated.
     '''
-    G_out = []
-    Ds = {}  # key: symbol; value: its short-rule closures
-    Ds[0] = closure_s(G, 0)
+    grammar = []
+    d_s = {}  # key: symbol; value: its short-rule closures
+    d_s[0] = closure_s(G, 0)
     for nt, subs in G:
         if len(subs) == 2:
             a, b = subs
-            if a not in Ds:
-                Ds[a] = closure_s(G, a)
-            if b not in Ds:
-                Ds[b] = closure_s(G, b)
-            for a_ in Ds[a]:
-                for b_ in Ds[b]:
-                    G_out.append((nt, [a_, b_]))
+            if a not in d_s:
+                d_s[a] = closure_s(G, a)
+            if b not in d_s:
+                d_s[b] = closure_s(G, b)
+            for a_ in d_s[a]:
+                for b_ in d_s[b]:
+                    grammar.append((nt, [a_, b_]))
 
-    G_out_extra = []
-    for a in Ds[0] - {0}:
-        for nt, subs in G_out:
+    grammar_extra = []
+    for a in d_s[0] - {0}:
+        for nt, subs in grammar:
             if nt == a and len(subs) == 2:
-                G_out_extra.append((0, subs))
-    G_out = G_out + G_out_extra
+                grammar_extra.append((0, subs))
+    grammar = grammar + grammar_extra
 
-    return G_out
+    return grammar
 
 
 def minimize_rules(G):
@@ -155,7 +163,7 @@ def minimize_rules(G):
         - remove production rules containing undefined non-terminals
         - replace terminals that have a single short production rule
     '''
-    G_all_defined = []
+    grammar_defined = []
     nt_s = set()
     defined_nt_s = set()
     for nt, subs in G:
@@ -166,10 +174,10 @@ def minimize_rules(G):
     undefined_nt_s = nt_s - defined_nt_s
     for nt, subs in G:
         if all([s not in undefined_nt_s for s in subs]):
-            G_all_defined.append((nt, subs))
+            grammar_defined.append((nt, subs))
     nt_s = nt_s - undefined_nt_s
 
-    G_non_single = G_all_defined
+    grammar_non_single = grammar_defined
 
     # TODO: the following logic below may not preserve equivalent grammar
     # while True:
@@ -202,28 +210,28 @@ def minimize_rules(G):
     #         G_wip.append((nt, subs))
     #     G_non_single = G_wip
 
-    return G_non_single
+    return grammar_non_single
 
 
-def to_CNF(G):
+def to_cnf(g):
     '''
-    convert CFG @G to Chomsky Normal Form.
+    convert CFG `g` to Chomsky Normal Form.
     '''
-    G = minimize_rules(G)
-    G = eliminate_long_rules(G)
-    G = eliminate_e_rules(G)
-    G = eliminate_short_rules(G)
-    G = minimize_rules(G)
-    return G
+    g = minimize_rules(g)
+    g = eliminate_long_rules(g)
+    g = eliminate_e_rules(g)
+    g = eliminate_short_rules(g)
+    g = minimize_rules(g)
+    return g
 
 
-def decide(G, x):
+def decide(g, x):
     '''
-    given CFG @G in CNF, decide if string @x is in L(G).
+    given CFG `g` in CNF, decide if string `x` is in L(g).
     '''
     n = len(x)
-    if n < 1:
-        raise Exception("empty string not support")
+    if n < 2:
+        raise Exception("string must be at least two-character-long")
 
     # N[i][j] is the set of all symbols that can derive substring x[i:j+1]
     N = [[set() for _ in range(n)] for _ in range(n)]
@@ -241,7 +249,7 @@ def decide(G, x):
             for k in range(i, i + s):
                 # substring is divided by two halves: first half + second half
                 # k is the ending index of the first half
-                for a, (b, c) in G:
+                for a, (b, c) in g:
                     if b in N[i][k] and c in N[k + 1][i + s]:
                         N[i][i + s].add(a)
 
@@ -251,13 +259,29 @@ def decide(G, x):
 
 class CFLRecognizer:
 
-    def __init__(self, cfgex, fmt, lexing):
+    def __init__(self, cfgex, lexing):
         self.lexing = lexing
-        self.G = parse(cfgex, fmt, lexing)
-        self.G = to_CNF(self.G)
+        self.grammar = parse(cfgex, lexing)
+        self.grammar_cnf = to_cnf(self.grammar)
 
     def match(self, string):
+        if len(string) == 0:
+            return self._match_len0()
+        elif len(string) == 1:
+            return self._match_len1(string[0])
+
         if self.lexing:
-            string = lexer.lex(self.G, string)
+            string = lexer.lex(self.grammar_cnf, string)
             print("post lexing:", string)
-        return decide(self.G, string)
+        return decide(self.grammar_cnf, string)
+
+    def _match_len0(self):
+        nt_s = reverse_closure_e(self.grammar)
+        return 0 in nt_s
+
+    def _match_len1(self, s):
+        g = minimize_rules(self.grammar)
+        g = eliminate_long_rules(g)
+        g = eliminate_e_rules(g)
+        nt_s = reverse_closure(g, s)
+        return 0 in nt_s
