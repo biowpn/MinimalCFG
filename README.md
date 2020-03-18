@@ -16,7 +16,7 @@ mincfg.match(r"<S>::=<S><S> <S>::='('')' <S>::=''", "(())()")
 Or, construct a CFL recognizer first and call `match` later:
 
 ```
-r = mincfg.compile(r"<S>::=<S><S> <S>::='('')' <S>::=''", "(())()")
+r = mincfg.compile(r"<S>::=<S><S> <S>::='('')' <S>::=''")
 r.match("(())()")
 ```
 
