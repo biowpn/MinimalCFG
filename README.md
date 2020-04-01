@@ -27,47 +27,47 @@ r.match("(())()")
 ## Command Line Usage
 
 ```
-[In]  python -m mincfg .\examples\dna.bnf "ACCATCA"
+[In]  python -m mincfg examples/dna.bnf -s "ACCATCA"
 [Out] Yes
 ```
 
 ```
-[In]  python -m mincfg .\examples\dna.bnf "UGGUAGU"
+[In]  python -m mincfg examples/dna.bnf -s "UGGUAGU"
 [Out] No
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2 - 1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2 - 1)"
 [Out] Yes
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2 (-) 1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2 (-) 1)"
 [Out] No
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2 - -1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2 - -1)"
 [Out] Yes
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2--1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2--1)"
 [Out] Yes
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2-- 1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2-- 1)"
 [Out] No
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2- -1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2- -1)"
 [Out] Yes
 ```
 
 ```
-[In]  python -m mincfg .\examples\arithmetic.bnf "(2---1)"
+[In]  python -m mincfg examples/arithmetic.bnf -s "(2---1)"
 [Out] Yes
 ```
 
