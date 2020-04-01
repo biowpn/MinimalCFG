@@ -95,7 +95,7 @@ def test_match_arithmetic_expression():
     assert(g3.match("((3 + 20) / 5) - 4 * (8 + 9)") == True)
 
     assert(g3.match("1+") == False)
-    assert(g3.match("1++1") == False)
+    assert(g3.match("1++1") == True)
     assert(g3.match("+ 3") == False)
     assert(g3.match("1 (+) 1") == False)
     assert(g3.match("(1 */ 5") == False)
