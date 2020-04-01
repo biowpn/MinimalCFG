@@ -4,6 +4,10 @@ Build arbitrary Context-Free Language recognizer given its grammar in [BNF](http
 
 See also: [Minimal Regular Expression Engine](https://github.com/ymenghank/MinimalRegEx)
 
+## Requirements
+
+[bnfparser](https://github.com/biowpn/bnfparser)
+
 ## Usage
 
 
