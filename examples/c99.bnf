@@ -1,9 +1,9 @@
-<translation-unit> ::= {<external-declaration>}*
+<translation-unit> ::= <external-declaration>*
 
 <external-declaration> ::= <function-definition>
                          | <declaration>
 
-<function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
+<function-definition> ::= <declaration-specifier>* <declarator> <declaration>* <compound-statement>
 
 <declaration-specifier> ::= <storage-class-specifier>
                           | <type-specifier>
@@ -28,14 +28,14 @@
                    | <enum-specifier>
                    | <typedef-name>
 
-<struct-or-union-specifier> ::= <struct-or-union> <identifier> "{" {<struct-declaration>}+ "}"
-                              | <struct-or-union> "{" {<struct-declaration>}+ "}"
+<struct-or-union-specifier> ::= <struct-or-union> <identifier> "{" <struct-declaration>+ "}"
+                              | <struct-or-union> "{" <struct-declaration>+ "}"
                               | <struct-or-union> <identifier>
 
 <struct-or-union> ::= "struct"
                     | "union"
 
-<struct-declaration> ::= {<specifier-qualifier>}* <struct-declarator-list> ";"
+<struct-declaration> ::= <specifier-qualifier>* <struct-declarator-list> ";"
 
 <specifier-qualifier> ::= <type-specifier>
                         | <type-qualifier>
@@ -47,18 +47,18 @@
                       | <declarator> ":" <constant-expression>
                       | ":" <constant-expression>
 
-<declarator> ::= {<pointer>}? <direct-declarator>
+<declarator> ::= <pointer>? <direct-declarator>
 
-<pointer> ::= "*" {<type-qualifier>}* {<pointer>}?
+<pointer> ::= "*" <type-qualifier>* <pointer>?
 
 <type-qualifier> ::= "const"
                    | "volatile"
 
 <direct-declarator> ::= <identifier>
                       | "(" <declarator> ")"
-                      | <direct-declarator> "[" {<constant-expression>}? "]"
+                      | <direct-declarator> "[" <constant-expression>? "]"
                       | <direct-declarator> "(" <parameter-type-list> ")"
-                      | <direct-declarator> "(" {<identifier>}* ")"
+                      | <direct-declarator> "(" <identifier>* ")"
 
 <constant-expression> ::= <constant>
 
@@ -115,7 +115,7 @@
 
 <postfix-expression> ::= <primary-expression>
                        | <postfix-expression> "[" <expression> "]"
-                       | <postfix-expression> "(" {<assignment-expression>}* ")"
+                       | <postfix-expression> "(" <assignment-expression>* ")"
                        | <postfix-expression> "." <identifier>
                        | <postfix-expression> "->" <identifier>
                        | <postfix-expression> "++"
@@ -156,7 +156,7 @@
                    | "~"
                    | "!"
 
-<type-name> ::= {<specifier-qualifier>}+ {<abstract-declarator>}?
+<type-name> ::= <specifier-qualifier>+ <abstract-declarator>?
 
 <parameter-type-list> ::= <parameter-list>
                         | <parameter-list> "," "..."
@@ -164,17 +164,17 @@
 <parameter-list> ::= <parameter-declaration>
                    | <parameter-list> "," <parameter-declaration>
 
-<parameter-declaration> ::= {<declaration-specifier>}+ <declarator>
-                          | {<declaration-specifier>}+ <abstract-declarator>
-                          | {<declaration-specifier>}+
+<parameter-declaration> ::= <declaration-specifier>+ <declarator>
+                          | <declaration-specifier>+ <abstract-declarator>
+                          | <declaration-specifier>+
 
 <abstract-declarator> ::= <pointer>
                         | <pointer> <direct-abstract-declarator>
                         | <direct-abstract-declarator>
 
 <direct-abstract-declarator> ::=  "(" <abstract-declarator> ")"
-                               | {<direct-abstract-declarator>}? "[" {<constant-expression>}? "]"
-                               | {<direct-abstract-declarator>}? "(" {<parameter-type-list>}? ")"
+                               | <direct-abstract-declarator>? "[" <constant-expression>? "]"
+                               | <direct-abstract-declarator>? "(" <parameter-type-list>? ")"
 
 <enum-specifier> ::= "enum" <identifier> "{" <enumerator-list> "}"
                    | "enum" "{" <enumerator-list> "}"
@@ -188,7 +188,7 @@
 
 <typedef-name> ::= <identifier>
 
-<declaration> ::=  {<declaration-specifier>}+ {<init-declarator>}* ";"
+<declaration> ::= <declaration-specifier>+ <init-declarator>* ";"
 
 <init-declarator> ::= <declarator>
                     | <declarator> "=" <initializer>
@@ -200,7 +200,7 @@
 <initializer-list> ::= <initializer>
                      | <initializer-list> "," <initializer>
 
-<compound-statement> ::= "{" {<declaration>}* {<statement>}* "}"
+<compound-statement> ::= "{" <declaration>* <statement>* "}"
 
 <statement> ::= <labeled-statement>
               | <expression-statement>
@@ -213,7 +213,7 @@
                       | "case" <constant-expression> ":" <statement>
                       | "default" ":" <statement>
 
-<expression-statement> ::= {<expression>}? ";"
+<expression-statement> ::= <expression>? ";"
 
 <selection-statement> ::= "if" "(" <expression> ")" <statement>
                         | "if" "(" <expression> ")" <statement> "else" <statement>
@@ -221,12 +221,12 @@
 
 <iteration-statement> ::= "while" "(" <expression> ")" <statement>
                         | "do" <statement> "while" "(" <expression> ")" ";"
-                        | "for" "(" {<expression>}? ";" {<expression>}? ";" {<expression>}? ")" <statement>
+                        | "for" "(" <expression>? ";" <expression>? ";" <expression>? ")" <statement>
 
 <jump-statement> ::= "goto" <identifier> ";"
                    | "continue" ";"
                    | "break" ";"
-                   | "return" {<expression>}? ";"
+                   | "return" <expression>? ";"
 
  <digit> ::=  "0"
             | "1"
@@ -257,7 +257,7 @@
 
 <character-constant> ::= "'character'"
 
-<integer-constant> ::= {<digit>}+
+<integer-constant> ::= <digit>+
 
 <floating-constant> ::= <integer-constant> "." <integer-constant>
 

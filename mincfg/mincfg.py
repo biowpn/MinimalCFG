@@ -1,5 +1,5 @@
 
-from . import bnfparser
+import bnfparser
 from . import lexer
 
 
@@ -21,15 +21,13 @@ def compile(cfgex, lexing=False):
 
 
 def parse(cfgex, lexing=False):
-    return bnfparser.parse(cfgex, lexing)[0]
+    lexemes = bnfparser.lexer.lex(cfgex, lexing)
+    bp = bnfparser.BNFParser()
+    return bp.parse(lexemes)
 
 
-def get_max_non_terminal(G):
-    nt_max = 0
-    for nt, _ in G:
-        if nt > nt_max:
-            nt_max = nt
-    return nt_max
+def get_min_non_terminal(G):
+    return min(nt for nt, _ in G)
 
 
 def eliminate_long_rules(G):
@@ -41,16 +39,16 @@ def eliminate_long_rules(G):
         A1 -> B2 A2
         A2 -> B3 B4
     '''
-    nt_new = get_max_non_terminal(G) + 1
+    nt_new = get_min_non_terminal(G) - 1
     G_out = []
     for nt, subs in G:
         if len(subs) > 2:
             G_out.append((nt, [subs[0], nt_new]))
             for a in subs[1:-2]:
-                G_out.append((nt_new, [a, nt_new + 1]))
-                nt_new += 1
+                G_out.append((nt_new, [a, nt_new - 1]))
+                nt_new -= 1
             G_out.append((nt_new, subs[-2:]))
-            nt_new += 1
+            nt_new -= 1
         else:
             G_out.append((nt, subs))
     return G_out
@@ -132,10 +130,11 @@ def eliminate_short_rules(G):
     short rules:
         A -> B
     assuming long rules and e-rules have been eliminated.
+    assuming starting non-terminal is -1.
     '''
     grammar = []
     d_s = {}  # key: symbol; value: its short-rule closures
-    d_s[0] = closure_s(G, 0)
+    d_s[0] = closure_s(G, -1)
     for nt, subs in G:
         if len(subs) == 2:
             a, b = subs
@@ -148,10 +147,10 @@ def eliminate_short_rules(G):
                     grammar.append((nt, [a_, b_]))
 
     grammar_extra = []
-    for a in d_s[0] - {0}:
+    for a in d_s[0] - {-1}:
         for nt, subs in grammar:
             if nt == a and len(subs) == 2:
-                grammar_extra.append((0, subs))
+                grammar_extra.append((-1, subs))
     grammar = grammar + grammar_extra
 
     return grammar
@@ -253,8 +252,8 @@ def decide(g, x):
                     if b in N[i][k] and c in N[k + 1][i + s]:
                         N[i][i + s].add(a)
 
-    # assume starting state is 0
-    return 0 in N[0][n - 1]
+    # assume starting state is -1
+    return -1 in N[0][n - 1]
 
 
 class CFLRecognizer:
@@ -277,11 +276,11 @@ class CFLRecognizer:
 
     def _match_len0(self):
         nt_s = reverse_closure_e(self.grammar)
-        return 0 in nt_s
+        return -1 in nt_s
 
     def _match_len1(self, s):
         g = minimize_rules(self.grammar)
         g = eliminate_long_rules(g)
         g = eliminate_e_rules(g)
         nt_s = reverse_closure(g, s)
-        return 0 in nt_s
+        return -1 in nt_s
