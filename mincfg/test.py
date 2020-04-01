@@ -178,9 +178,6 @@ def test_BNF_lexing():
 
 
 def test_match_C_programming_language():
-    # TODO: this test failed
-    return
-
     with open("examples/c99.bnf") as F:
         g6 = mincfg.compile(F.read(), True)
     print("number of rules of this mincfg in CNF:", len(g6.grammar))
