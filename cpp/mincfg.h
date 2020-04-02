@@ -1,6 +1,6 @@
 
 #include <vector>
-#include <set>
+#include <unordered_set>
 #include <string>
 
 // #include <iostream>
@@ -12,7 +12,7 @@ struct rule_t
     int t_right{0};
 };
 
-bool is_match(const std::string &str, std::vector<rule_t> rules)
+bool is_match(const std::string &str, const std::vector<rule_t> &rules)
 {
     auto n = str.length();
     if (n < 2)
@@ -20,7 +20,7 @@ bool is_match(const std::string &str, std::vector<rule_t> rules)
         return false;
     }
 
-    std::vector<std::vector<std::set<int>>> M;
+    std::vector<std::vector<std::unordered_set<int>>> M;
     M.resize(n);
     for (auto &row : M)
     {
@@ -47,6 +47,7 @@ bool is_match(const std::string &str, std::vector<rule_t> rules)
                 }
             }
         }
+        // std::cout << "loop s = " << s << std::endl;
     }
 
     // for (std::size_t i = 0; i < n; ++i)
