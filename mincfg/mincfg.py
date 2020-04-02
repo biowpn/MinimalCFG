@@ -158,12 +158,9 @@ def eliminate_short_rules(G):
 
 def minimize_rules_1(G):
     '''
-    Perform the following minimization:
+    Perform the following (trivial) minimization:
         - remove duplicated rules
         - remove self-produced rule
-        - remove production rules containing undefined non-terminals
-
-    G need not have any elimination.
     '''
 
     # remove duplicated rules
@@ -186,6 +183,14 @@ def minimize_rules_1(G):
         G2.append((nt, sub))
     G = G2
 
+    return G
+
+
+def minimize_rules_2(G):
+    '''
+    Perform the following minimization:
+        - remove production rules containing undefined non-terminals
+    '''
     # remove production rules containing undefined non-terminals
     G2 = []
     nt_s = set()
@@ -204,7 +209,7 @@ def minimize_rules_1(G):
     return G
 
 
-def minimize_rules_2(G):
+def minimize_rules_3(G):
     '''
     Perform the following minimization:
         - remove non-terminal produced by exactly one short rule
@@ -270,17 +275,23 @@ def to_cnf(G):
 
     # print(f"before minimize, n = {len(G)}")
     G = minimize_rules_1(G)
+    G = minimize_rules_2(G)
     # print(f"after minimize, n = {len(G)}")
 
     G = eliminate_long_rules(G)
+
     G = eliminate_e_rules(G)
+
+    # print(f"before minimize, n = {len(G)}")
+    G = minimize_rules_3(G)
+    # print(f"after minimize, n = {len(G)}")
+
+    G = eliminate_short_rules(G)
 
     # print(f"before minimize, n = {len(G)}")
     G = minimize_rules_2(G)
     # print(f"after minimize, n = {len(G)}")
 
-    G = eliminate_short_rules(G)
-    # G = minimize_rules_1(G)
     return G
 
 
