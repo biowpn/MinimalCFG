@@ -156,13 +156,38 @@ def eliminate_short_rules(G):
     return grammar
 
 
-def minimize_rules(G):
+def minimize_rules_1(G):
     '''
-    perform the following minimization:
+    Perform the following minimization:
+        - remove duplicated rules
+        - remove self-produced rule
         - remove production rules containing undefined non-terminals
-        - replace terminals that have a single short production rule
+
+    G need not have any elimination.
     '''
-    grammar_defined = []
+
+    # remove duplicated rules
+    G2 = []
+    for rule1 in G:
+        duplicated = False
+        for rule2 in G2:
+            if rule1[0] == rule2[0] and rule1[1] == rule2[1]:
+                duplicated = True
+                break
+        if not duplicated:
+            G2.append(rule1)
+    G = G2
+
+    # remove self-produced rule
+    G2 = []
+    for nt, sub in G:
+        if len(sub) == 1 and nt == sub[0]:
+            continue
+        G2.append((nt, sub))
+    G = G2
+
+    # remove production rules containing undefined non-terminals
+    G2 = []
     nt_s = set()
     defined_nt_s = set()
     for nt, subs in G:
@@ -172,61 +197,96 @@ def minimize_rules(G):
                 nt_s.add(s)
     undefined_nt_s = nt_s - defined_nt_s
     for nt, subs in G:
-        if all([s not in undefined_nt_s for s in subs]):
-            grammar_defined.append((nt, subs))
-    nt_s = nt_s - undefined_nt_s
+        if all(s not in undefined_nt_s for s in subs):
+            G2.append((nt, subs))
+    G = G2
 
-    grammar_non_single = grammar_defined
-
-    # TODO: the following logic below may not preserve equivalent grammar
-    # while True:
-    #     G_wip = []
-    #     non_single_nt_s = set()
-    #     single_nt_s = {}
-    #     for nt, subs in G_non_single:
-    #         if len(subs) == 1:
-    #             if nt in non_single_nt_s:
-    #                 continue
-    #             elif nt in single_nt_s and subs[0] != single_nt_s[nt]:
-    #                 single_nt_s.pop(nt)
-    #                 non_single_nt_s.add(nt)
-    #             else:
-    #                 single_nt_s[nt] = subs[0]
-    #         else:
-    #             non_single_nt_s.add(nt)
-    #             if nt in single_nt_s:
-    #                 single_nt_s.pop(nt)
-    #     if 0 in single_nt_s:
-    #         single_nt_s.pop(0)
-    #     if not single_nt_s:
-    #         break
-    #     for nt, subs in G_non_single:
-    #         if nt in single_nt_s:
-    #             continue
-    #         for i, s in enumerate(subs):
-    #             if s in single_nt_s:
-    #                 subs[i] = single_nt_s[s]
-    #         G_wip.append((nt, subs))
-    #     G_non_single = G_wip
-
-    return grammar_non_single
+    return G
 
 
-def to_cnf(g):
+def minimize_rules_2(G):
     '''
-    convert CFG `g` to Chomsky Normal Form.
+    Perform the following minimization:
+        - remove non-terminal produced by exactly one short rule
+
+            For example:
+                <a> ::= <x>
+                <x> ::= '0'
+                <x> ::= '1'
+            We can then eliminate <x>, resulting:
+                <a> ::= '0'
+                <a> ::= '1'
+
+            Note that if the non-terminal can be produced by more than one short rules,
+            there is no benefit in eliminating it:
+                <a> ::= <x>
+                <b> ::= <x>
+                <c> ::= <x>
+                <x> ::= '0'
+                <x> ::= '1'
+            Eliminating <x> would result in a total of 6 rules, even more than before!
+
+            Also, we never eliminate the starting -1 non-terminal.
+
+    Assuming there are short rules.
     '''
-    g = minimize_rules(g)
-    g = eliminate_long_rules(g)
-    g = eliminate_e_rules(g)
-    g = eliminate_short_rules(g)
-    g = minimize_rules(g)
-    return g
+
+    nt_s = set(nt for nt, _ in G)
+    done = False
+    while not done:
+        done = True
+        for nt in nt_s:
+            nt0 = None
+            by_short_rule_count = 0
+            for nt2, sub in G:
+                if len(sub) > 1 and nt in sub:
+                    by_short_rule_count = -1
+                    break
+                if len(sub) == 1 and sub[0] == nt:
+                    by_short_rule_count += 1
+                    nt0 = nt2
+            if by_short_rule_count == 1:
+                # now we eliminate nt
+                G2 = []
+                for nt2, sub in G:
+                    if len(sub) == 1 and sub[0] == nt:
+                        continue
+                    if nt2 == nt:
+                        # replace it by the non-terminal that produces it
+                        nt2 = nt0
+                    G2.append((nt2, sub))
+                G = G2
+                nt_s.remove(nt)
+                done = False
+                break
+
+    return G
 
 
-def decide(g, x):
+def to_cnf(G):
     '''
-    given CFG `g` in CNF, decide if string `x` is in L(g).
+    convert CFG `G` to Chomsky Normal Form.
+    '''
+
+    # print(f"before minimize, n = {len(G)}")
+    G = minimize_rules_1(G)
+    # print(f"after minimize, n = {len(G)}")
+
+    G = eliminate_long_rules(G)
+    G = eliminate_e_rules(G)
+
+    # print(f"before minimize, n = {len(G)}")
+    G = minimize_rules_2(G)
+    # print(f"after minimize, n = {len(G)}")
+
+    G = eliminate_short_rules(G)
+    # G = minimize_rules_1(G)
+    return G
+
+
+def decide(G, x):
+    '''
+    given CFG `G` in CNF, decide if string `x` is in L(G).
     '''
     n = len(x)
     if n < 2:
@@ -248,7 +308,7 @@ def decide(g, x):
             for k in range(i, i + s):
                 # substring is divided by two halves: first half + second half
                 # k is the ending index of the first half
-                for a, (b, c) in g:
+                for a, (b, c) in G:
                     if b in N[i][k] and c in N[k + 1][i + s]:
                         N[i][i + s].add(a)
 
@@ -279,8 +339,8 @@ class CFLRecognizer:
         return -1 in nt_s
 
     def _match_len1(self, s):
-        g = minimize_rules(self.grammar)
-        g = eliminate_long_rules(g)
-        g = eliminate_e_rules(g)
-        nt_s = reverse_closure(g, s)
+        G = minimize_rules_1(self.grammar)
+        G = eliminate_long_rules(G)
+        G = eliminate_e_rules(G)
+        nt_s = reverse_closure(G, s)
         return -1 in nt_s

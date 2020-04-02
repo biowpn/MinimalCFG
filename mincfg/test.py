@@ -180,7 +180,7 @@ def test_BNF_lexing():
 def test_match_C_programming_language():
     with open("examples/c99.bnf") as F:
         g6 = mincfg.compile(F.read(), True)
-    print("number of rules of this mincfg in CNF:", len(g6.grammar))
+    print("number of rules of this mincfg in CNF:", len(g6.grammar_cnf))
 
     # function declaration
     assert(g6.match("int main(){return 0;}") == True)
